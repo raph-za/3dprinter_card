@@ -1,0 +1,608 @@
+type: custom:stack-in-card
+card_mod:
+  style: |
+    ha-card {
+      border: none !important;
+      box-shadow: none !important;
+      --ha-card-border-width: 0 !important;
+      --ha-card-border-color: transparent !important;
+      --ha-card-box-shadow: none !important;
+    }
+cards:
+  - type: custom:layout-card
+    layout_type: custom:grid-layout
+    layout:
+      grid-template-columns: auto 44px
+      margin: "-4px -4px -8px -4px"
+    card_mod:
+      style: |
+        ha-card {
+          border: none !important;
+          box-shadow: none !important;
+          --ha-card-box-shadow: none !important;
+        }
+    cards:
+      - type: custom:stack-in-card
+        card_mod:
+          style: |
+            ha-card {
+              background: none;
+              border: none !important;
+              --ha-card-box-shadow: 0px;
+              box-shadow: none !important;
+            }
+        cards:
+          - type: custom:mushroom-template-card
+            entity: camera.voron_2_v2
+            primary: Voron V2
+            secondary: >-
+              {% if
+              is_state('sensor.voron_2_current_display_message','Printing') %}
+                {{ (states('sensor.voron_2_progress') | round(0) )}}% {{states('sensor.voron_2_current_display_message')}}
+              {% else %}
+                {{states('sensor.voron_2_current_display_message')}}
+              {% endif %}
+            icon: mdi:printer-3d-nozzle
+            icon_color: black
+            tap_action:
+              action: more-info
+            hold_action:
+              action: navigate
+              navigation_path: /lovelace/devices
+            card_mod:
+              style:
+                mushroom-shape-icon$: |
+                  .shape {
+                    background: radial-gradient(var(--card-background-color) 60%, transparent 0%), conic-gradient(rgb(252,109,9) {{ states('sensor.voron_2_progress') | round(0) }}% 0%, var(--card-background-color) 0% 100%);
+                  }
+                  .shape:after {
+                    content: "";
+                    height: 100%;
+                    width: 100%;
+                    position: absolute;
+                    border-radius: 50%;
+                    background: rgba(var(--rgb-{{ config.icon_color }}), 0.1);
+                  }
+                .: |
+                  ha-card {
+                    border: none !important;
+                    box-shadow: none !important;
+                  }
+          - type: custom:mushroom-chips-card
+            chips:
+              - type: template
+                content: "{{ states('sensor.voron_2_chamber_temp') | round(1) }} °C"
+                icon: mdi:printer-3d
+              - type: template
+                content: >-
+                  {{ states('sensor.voron_2_extruder_temperature') | round(1) }}
+                  °C
+                icon: mdi:printer-3d-nozzle-heat
+              - type: template
+                content: "{{ states('sensor.voron_2_bed_temperature') | round(1) }} °C"
+                icon: mdi:heating-coil
+              - type: conditional
+                conditions:
+                  - condition: state
+                    entity: binary_sensor.voron_2_printing
+                    state: "on"
+                chip:
+                  type: template
+                  content: >-
+                    {{ states('sensor.voron_2_print_eta') | as_timestamp |
+                    timestamp_custom ('%H:%M') }}
+                  icon: mdi:timer-sand-complete
+              - type: conditional
+                conditions:
+                  - condition: state
+                    entity: binary_sensor.octoprint_printing
+                    state: "on"
+                chip:
+                  type: template
+                  content: >-
+                    {% set time = (states('sensor.voron_2_print_time_left') |
+                    int) | int %} {% set minutes = ((time % 3600) / 60) | int %}
+                    {% set hours = ((time % 86400) / 3600) | int %} {% set days
+                    = (time / 86400) | int %} {%- if time < 60 -%}Less than a
+                    minute {%- else -%}
+                      {%- if days > 0 -%}{{ days }}d {% endif -%}
+                      {%- if hours > 0 -%}{{ hours }}h {% endif -%}
+                      {%- if minutes > 0 -%}{{ minutes }}m{% endif -%}
+                    {%- endif -%}
+                  icon: mdi:timer
+            card_mod:
+              style: |
+                ha-card {
+                  border: none !important;
+                  box-shadow: none !important;
+                }
+          - type: custom:mushroom-chips-card
+            chips:
+              - type: entity
+                entity: button.voron_2_pause_print
+                icon_color: white
+                icon: mdi:pause
+                content_info: none
+                tap_action:
+                  action: toggle
+                card_mod:
+                  style: |
+                    ha-card {
+                      --chip-background: rgba(var(--rgb-grey), 0.7);
+                      --icon-color: rgb(var(--rgb-white));
+                    }
+              - type: entity
+                entity: button.voron_2_emergency_stop
+                icon_color: white
+                icon: mdi:alert-octagon
+                content_info: none
+                tap_action:
+                  action: toggle
+                card_mod:
+                  style: |
+                    ha-card {
+                      --chip-background: rgba(var(--rgb-red), 1);
+                    }
+            card_mod:
+              style: |
+                ha-card {
+                  --chip-box-shadow: none;
+                  top: 16px;
+                  width: -webkit-fill-available;
+                  right: 52px;
+                  position: absolute;
+                  border: none !important;
+                  box-shadow: none !important;
+                }
+                .chip-container {
+                  right: 0px;
+                  position: absolute;
+                }
+      - type: custom:mushroom-template-card
+        entity: input_boolean.3d_printer_dropdown
+        primary: ""
+        secondary: ""
+        icon: >-
+          {{ 'mdi:chevron-down' if is_state(entity, 'off') else 'mdi:chevron-up'
+          }}
+        icon_color: disabled
+        tap_action:
+          action: toggle
+        hold_action:
+          action: none
+        card_mod:
+          style: |
+            ha-card {
+              align-items: flex-end;
+              background: none !important;
+              border: none !important;
+              --ha-card-box-shadow: 0px;
+              box-shadow: none !important;
+            }
+            mushroom-shape-icon {
+              --shape-color: none !important;
+            }
+  - type: conditional
+    conditions:
+      - entity: input_boolean.3d_printer_dropdown
+        state: "on"
+    card:
+      type: custom:stack-in-card
+      card_mod:
+        style: |
+          ha-card {
+            border: none !important;
+            box-shadow: none !important;
+            --ha-card-border-width: 0 !important;
+            --ha-card-border-color: transparent !important;
+            --ha-card-box-shadow: none !important;
+          }
+      cards:
+        - type: custom:layout-card
+          layout_type: custom:masonry-layout
+          card_mod:
+            style: |
+              ha-card {
+                border: none !important;
+                box-shadow: none !important;
+              }
+          cards:
+            - type: picture-entity
+              show_state: false
+              show_name: false
+              camera_view: auto
+              entity: camera.voron_2_v2
+              card_mod:
+                style: |
+                  ha-card {
+                    border: none !important;
+                    box-shadow: none !important;
+                  }
+        - type: custom:stack-in-card
+          mode: horizontal
+          keep:
+            background: true
+            border_radius: true
+            margin: true
+          cards:
+            - type: custom:mushroom-template-card
+              entity: button.voron_2_pause_print
+              icon: mdi:pause
+              icon_color: orange
+              layout: vertical
+              tap_action:
+                action: toggle
+              card_mod:
+                style: |
+                  ha-card {
+                    background: rgba(var(--rgb-orange), 0.1);
+                    width: 66px;
+                    border-radius: 50%;
+                    margin-left: auto;
+                    margin-right: auto;
+                    border: none !important;
+                    box-shadow: none !important;
+                  }
+            - type: custom:mushroom-template-card
+              entity: button.voron_2_resume_print
+              icon: mdi:play
+              icon_color: green
+              layout: vertical
+              tap_action:
+                action: toggle
+              card_mod:
+                style: |
+                  ha-card {
+                    background: rgba(var(--rgb-green), 0.1);
+                    width: 66px;
+                    border-radius: 50%;
+                    margin-left: auto;
+                    margin-right: auto;
+                    border: none !important;
+                    box-shadow: none !important;
+                  }
+            - type: custom:mushroom-template-card
+              entity: button.voron_2_cancel_print
+              icon: mdi:stop
+              icon_color: red
+              layout: vertical
+              tap_action:
+                action: toggle
+              card_mod:
+                style: |
+                  ha-card {
+                    background: rgba(var(--rgb-red), 0.1);
+                    width: 66px;
+                    border-radius: 50%;
+                    margin-left: auto;
+                    margin-right: auto;
+                    border: none !important;
+                    box-shadow: none !important;
+                  }
+          card_mod:
+            style: |
+              ha-card {
+                border: none !important;
+                --ha-card-box-shadow: 0px;
+                box-shadow: none !important;
+              }
+        - type: custom:layout-card
+          layout_type: custom:grid-layout
+          layout:
+            grid-template-columns: 197px auto
+            margin: "-4px -4px -8px -4px"
+          card_mod:
+            style: |
+              ha-card {
+                border: none !important;
+                box-shadow: none !important;
+              }
+          cards:
+            - type: custom:stack-in-card
+              card_mod:
+                style: |
+                  ha-card {
+                    margin-top: 0px;
+                    background: none;
+                    border: none !important;
+                    --ha-card-box-shadow: 0px;
+                    box-shadow: none !important;
+                  }
+              cards:
+                - type: custom:mushroom-entity-card
+                  entity: sensor.voron_2_printer_message
+                  icon_color: green
+                  icon: si:octopusdeploy
+                  primary_info: name
+                  secondary_info: state
+                  name: OctoPrint Status
+                  card_mod:
+                    style: |
+                      ha-card {
+                        --badge-size: 0px !important;
+                        border: none !important;
+                        box-shadow: none !important;
+                      }
+                - type: custom:mushroom-entity-card
+                  entity: sensor.voron_2_print_time_left
+                  icon_color: light-blue
+                  tap_action:
+                    action: none
+                  primary_info: name
+                  secondary_info: state
+                  name: Est. Finish Time
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                      }
+                - type: custom:mushroom-template-card
+                  entity: sensor.3d_printer_power_power
+                  icon_color: "{{ 'amber' if states(entity) | int > 0 else 'disabled' }}"
+                  tap_action:
+                    action: none
+                  primary: Power Use
+                  secondary: "{{ states(entity) }} W"
+                  icon: mdi:flash
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                      }
+            - type: custom:stack-in-card
+              card_mod:
+                style: |
+                  ha-card {
+                    background: none;
+                    border: none !important;
+                    --ha-card-box-shadow: 0px;
+                    box-shadow: none !important;
+                  }
+              cards:
+                - type: custom:apexcharts-card
+                  header:
+                    show: false
+                  series:
+                    - entity: sensor.voron_2_progress
+                      name: Job Progress
+                      color: rgb(3, 169, 244)
+                      show:
+                        legend_value: false
+                  chart_type: radialBar
+                  apex_config:
+                    legend:
+                      show: false
+                    chart:
+                      height: 230px
+                      animations:
+                        enabled: false
+                    plotOptions:
+                      radialBar:
+                        hollow:
+                          size: 80%
+                        dataLabels:
+                          name:
+                            show: false
+                          value:
+                            show: false
+                        track:
+                          strokeWidth: 80%
+                          margin: 0
+                    fill:
+                      type: gradient
+                      gradient:
+                        shade: light
+                        type: horizontal
+                        shadeIntensity: 0.3
+                        inverseColors: false
+                        opacityFrom: 1
+                        opacityTo: 1
+                        stops:
+                          - 0
+                          - 50
+                          - 55
+                          - 90
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                      }
+                - type: custom:mushroom-entity-card
+                  entity: sensor.voron_2_progress
+                  primary_info: state
+                  secondary_info: name
+                  name: Job Progress
+                  icon_color: light-blue
+                  layout: vertical
+                  card_mod:
+                    style: |
+                      ha-card {
+                        margin-top: -165px;
+                        width: 140px;
+                        margin-left: auto;
+                        margin-right: auto;
+                        background: none;
+                        border: none !important;
+                        --ha-card-box-shadow: 0px;
+                        box-shadow: none !important;
+                      }
+        - type: custom:stack-in-card
+          card_mod:
+            style: |
+              ha-card {
+                background: none;
+                border: none !important;
+                --ha-card-box-shadow: 0px;
+                box-shadow: none !important;
+              }
+          cards:
+            - type: grid
+              square: false
+              columns: 2
+              cards:
+                - type: custom:stack-in-card
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                      }
+                  cards:
+                    - type: custom:apexcharts-card
+                      chart_type: radialBar
+                      series:
+                        - entity: sensor.voron_2_bed_temperature
+                          color: rgb(103, 58, 183)
+                          max: 110
+                          show:
+                            legend_value: false
+                        - entity: sensor.voron_2_bed_temperature
+                          color: rgb(103, 58, 183)
+                          max: 110
+                          show:
+                            legend_value: false
+                      apex_config:
+                        plotOptions:
+                          radialBar:
+                            offsetY: -20
+                            offsetX: -25
+                            startAngle: -105
+                            endAngle: 105
+                            hollow:
+                              size: 60%
+                            dataLabels:
+                              name:
+                                show: false
+                              value:
+                                show: false
+                        legend:
+                          show: false
+                        chart:
+                          animations:
+                            enabled: false
+                          height: 220px
+                        fill:
+                          type: gradient
+                          gradient:
+                            shade: light
+                            type: horizontal
+                            shadeIntensity: 0.3
+                            inverseColors: false
+                            opacityFrom: 1
+                            opacityTo: 1
+                            stops:
+                              - 0
+                              - 50
+                              - 55
+                              - 90
+                      card_mod:
+                        style: |
+                          ha-card {
+                            border: none !important;
+                            box-shadow: none !important;
+                          }
+                    - type: custom:mushroom-template-card
+                      primary: Bed Temp
+                      secondary: >-
+                        {{ states(entity) | round(1) }} °C / {{
+                        states('sensor.voron_2_bed_temperature') | round(1) }}
+                        °C
+                      icon: mdi:thermometer-lines
+                      entity: sensor.voron_2_bed_temperature
+                      icon_color: deep-purple
+                      layout: vertical
+                      card_mod:
+                        style: |
+                          ha-card {
+                            margin-top: -95px;
+                            width: 175px;
+                            margin-left: auto;
+                            margin-right: auto;
+                            border: none !important;
+                            box-shadow: none !important;
+                          }
+                - type: custom:stack-in-card
+                  card_mod:
+                    style: |
+                      ha-card {
+                        border: none !important;
+                        box-shadow: none !important;
+                      }
+                  cards:
+                    - type: custom:apexcharts-card
+                      chart_type: radialBar
+                      series:
+                        - entity: sensor.voron_2_extruder_temperature
+                          color: rgb(233, 30, 99)
+                          max: 240
+                          show:
+                            legend_value: false
+                        - entity: sensor.voron_2_extruder_temperature
+                          color: rgb(233, 30, 99)
+                          max: 240
+                          show:
+                            legend_value: false
+                      apex_config:
+                        plotOptions:
+                          radialBar:
+                            offsetY: -20
+                            offsetX: -25
+                            startAngle: -105
+                            endAngle: 105
+                            hollow:
+                              size: 60%
+                            dataLabels:
+                              name:
+                                show: false
+                              value:
+                                show: false
+                              chart:
+                                animations:
+                                  enabled: false
+                        legend:
+                          show: false
+                        chart:
+                          height: 220px
+                        fill:
+                          type: gradient
+                          gradient:
+                            shade: light
+                            type: horizontal
+                            shadeIntensity: 0.3
+                            inverseColors: false
+                            opacityFrom: 1
+                            opacityTo: 1
+                            stops:
+                              - 0
+                              - 50
+                              - 55
+                              - 90
+                      card_mod:
+                        style: |
+                          ha-card {
+                            border: none !important;
+                            box-shadow: none !important;
+                          }
+                    - type: custom:mushroom-template-card
+                      primary: Tool Temp
+                      secondary: >-
+                        {{ states(entity) | round(1) }} °C / {{
+                        states('sensor.voron_2_extruder_temperature') | round(1)
+                        }} °C
+                      icon: mdi:printer-3d-nozzle
+                      entity: sensor.voron_2_extruder_temperature
+                      icon_color: pink
+                      layout: vertical
+                      card_mod:
+                        style: |
+                          ha-card {
+                            margin-top: -95px;
+                            width: 175px;
+                            margin-left: auto;
+                            margin-right: auto;
+                            border: none !important;
+                            box-shadow: none !important;
+                          }
